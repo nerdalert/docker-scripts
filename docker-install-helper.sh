@@ -3,7 +3,8 @@
 ###########
 # This script will install docker , docker-compose and docker-machine
 # on Mac OS X or Linux distributions using apt-get (adv packaging tool)
-# for package managment.
+# for package managment. The binaries installed are all then latest builds
+# from master. Uncomment lines for stable branches.
 #
 # For OS X it requires boot2docker to be preinstalled. In the same
 # directory as this script is an install_boot2docker.sh which requires
@@ -11,9 +12,24 @@
 ##########
 
 RESET='\033[00m'
-INFO='\033[01;94mINFO: '${RESET}
-WARN='\033[01;33mWARN: '${RESET}
-ERROR='\033[01;31mERROR: '${RESET}
+INFO='\033[01;94m[INFO] '${RESET}
+WARN='\033[01;33m[WARN] '${RESET}
+ERROR='\033[01;31m[ERROR] '${RESET}
+
+# Docker Machine v0.3.0-rc1
+DARWIN_DMACHINE="https://github.com/docker/machine/releases/download/v0.3.0-rc1/docker-machine_darwin-amd64"
+LINUX_DMACHINE="https://github.com/docker/machine/releases/download/v0.3.0-rc1/docker-machine_linux-amd64"
+# Uncomment for Docker Machine Nightly Build
+# DARWIN_DMACHINE="https://docker-machine-builds.evanhazlett.com/latest/docker-machine_darwin_amd64"
+# LINUX_DMACHINE="https://docker-machine-builds.evanhazlett.com/latest/docker-machine_linux_amd64"
+
+# Mac OS X Docker Client Binary 1.7 RC1
+DARWIN_DOCKER="https://master.dockerproject.com/darwin/amd64/docker"
+# Uncomment for latest stable docker binary
+# DARWIN_DOCKER="https://get.docker.com/builds/Darwin/x86_64/docker-latest"
+
+# Docker Compose RC for both OS X and Linux
+XPLAT_DCOMPOSE="https://github.com/docker/compose/releases/download/1.3.0rc1/docker-compose-`uname -s`-`uname -m`"
 
 command_exists () {
     type "$1" &> /dev/null ;
@@ -32,18 +48,18 @@ checkPermissions() {
 
 # Must have boot2docker installed if using Mac OS X
 installMachineMac() {
-    $SUDO wget --no-check-certificate -O /usr/local/bin/docker-machine http://docker-machine-builds.evanhazlett.com/latest/docker-machine_darwin_amd64
+    $SUDO wget --no-check-certificate -O /usr/local/bin/docker-machine ${DARWIN_DMACHINE}
     $SUDO chmod +x /usr/local/bin/docker-machine
 }
 
 installDockerBinMac(){
-    $SUDO wget --no-check-certificate -O /usr/local/bin/docker https://get.docker.com/builds/Darwin/x86_64/docker-latest
+    $SUDO wget --no-check-certificate -O /usr/local/bin/docker ${DARWIN_DOCKER}
     $SUDO chmod +x /usr/local/bin/docker
 }
 
 installCompose(){
     # Ran into weird permissions on OS X so downloading to CWD then moving, hackariffic
-    $SUDO wget --no-check-certificate -O ./docker-compose https://github.com/docker/compose/releases/download/1.2.0/docker-compose-`uname -s`-`uname -m`
+    $SUDO wget --no-check-certificate -O ./docker-compose ${XPLAT_DCOMPOSE}
     $SUDO mv docker-compose /usr/local/bin/docker-compose
     $SUDO chmod +x /usr/local/bin/docker-compose
 }
@@ -53,13 +69,16 @@ linuxDeps(){
 }
 
 installDockerBinLinux(){
+    # Uncomment for latest stable.then Else then latest test will be installed
+    # $SUDO wget --no-check-certificate -qO- https://get.docker.com/ | sh
+    # Install then latest test Docker binary
     $SUDO wget --no-check-certificate -qO- https://get.docker.com/ | sh
     $SUDO usermod -aG docker `whoami`
 }
 
 # Installing case nightly build from a maintainer Evan
 installMachineLinux() {
-    $SUDO wget --no-check-certificate -O /usr/local/bin/docker-machine https://docker-machine-builds.evanhazlett.com/latest/docker-machine_linux_amd64
+    $SUDO wget --no-check-certificate -O /usr/local/bin/docker-machine ${LINUX_DMACHINE}
     $SUDO chmod +x /usr/local/bin/docker-machine
 }
 
@@ -76,6 +95,21 @@ if [ "$UNAME" = "Darwin" ]; then
         echo -e "$INFO-----> that you can also use to install boot2docker and brew if it isnt already installed."
         exit 1
     fi
+    # If 'upgrade' was passed as a parameter it will refresh everything.
+    # Existing binaries will be deleted and replaced.
+    if [ $1 == 'upgrade' ]; then
+        echo -e "${WARN} Checking for boot2docker upgrades and refreshing all docker binaries."
+        echo -e "${WARN} You have 10 seconds to hit ctrl ^c to exit before existing binaries are removed"
+        sleep 10
+        $SUDO boot2docker upgrade
+        $SUDO rm -f /usr/local/bin/docker 2> /dev/null
+        $SUDO rm -f /usr/local/bin/docker-compose 2> /dev/null
+        $SUDO rm -f /usr/local/bin/docker-machine 2> /dev/null
+        echo -e "${INFO} Installing:"
+        echo -e "${INFO}"${XPLAT_DCOMPOSE}
+        echo -e "${INFO}"${LINUX_DMACHINE}
+        echo -e "${INFO}"${DARWIN_DOCKER}
+    fi
     echo -e "Boot2docker is installed, now checking docker binaries"
     if ! [ -x "$(command -v docker)" ]; then
         echo -e "$INFO-----> Downloading Docker Binary CLI"
@@ -90,6 +124,17 @@ if [ "$UNAME" = "Darwin" ]; then
         installCompose
     fi
 elif [ "$UNAME" = "Linux" ]; then
+    if [ $1 == 'upgrade' ]; then
+        echo -e "${WARN} Refreshing all docker binaries with the following versions:"
+        echo -e "${INFO}"${XPLAT_DCOMPOSE}
+        echo -e "${INFO}"${LINUX_DMACHINE}
+        echo -e "${INFO}"${DARWIN_DOCKER}
+        echo -e "${WARN} You have 10 seconds to hit ctrl ^c to exit before existing binaries are removed"
+        sleep 10
+        $SUDO rm -f /usr/local/bin/docker 2> /dev/null
+        $SUDO rm -f /usr/local/bin/docker-compose 2> /dev/null
+        $SUDO rm -f /usr/local/bin/docker-machine 2> /dev/null
+    fi
     # Linux platform
     echo -e "$WARN----> Linux detected, checking dependencies"
     if ! [ -x "$(command -v wget)" ]; then
@@ -131,5 +176,3 @@ if ! [ -x "$(command -v docker-machine)" ]; then
 else
     echo -e "$INFO Installed Docker Compose version -----> " $(docker-machine --version)
 fi
-
-
