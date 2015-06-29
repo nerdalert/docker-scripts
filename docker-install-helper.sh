@@ -16,20 +16,26 @@ INFO='\033[01;94m[INFO] '${RESET}
 WARN='\033[01;33m[WARN] '${RESET}
 ERROR='\033[01;31m[ERROR] '${RESET}
 
-# Docker Machine v0.3.0-rc1
-DARWIN_DMACHINE="https://github.com/docker/machine/releases/download/v0.3.0-rc1/docker-machine_darwin-amd64"
-LINUX_DMACHINE="https://github.com/docker/machine/releases/download/v0.3.0-rc1/docker-machine_linux-amd64"
+# Boot2Docker
+BOOT2DOCKER_RC="https://github.com/boot2docker/boot2docker/releases/download/v1.7.0/boot2docker.iso"
+
+# Docker Machine v0.3.0
+DARWIN_DMACHINE="https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_darwin-amd64"
+LINUX_DMACHINE="https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_linux-amd64"
+
 # Uncomment for Docker Machine Nightly Build
 # DARWIN_DMACHINE="https://docker-machine-builds.evanhazlett.com/latest/docker-machine_darwin_amd64"
 # LINUX_DMACHINE="https://docker-machine-builds.evanhazlett.com/latest/docker-machine_linux_amd64"
 
-# Mac OS X Docker Client Binary 1.7 RC1
-DARWIN_DOCKER="https://master.dockerproject.com/darwin/amd64/docker"
 # Uncomment for latest stable docker binary
-# DARWIN_DOCKER="https://get.docker.com/builds/Darwin/x86_64/docker-latest"
+ DARWIN_DOCKER="https://get.docker.com/builds/Darwin/x86_64/docker-latest"
+# Uncomment for latest nightly build
+# DARWIN_DOCKER="https://master.dockerproject.com/darwin/amd64/docker"
+# Mac OS X Docker Client Binary 1.7 RC1
+# DARWIN_DOCKER="https://test.docker.com/builds/Darwin/x86_64/docker-1.7.0-rc1"
 
 # Docker Compose RC for both OS X and Linux
-XPLAT_DCOMPOSE="https://github.com/docker/compose/releases/download/1.3.0rc1/docker-compose-`uname -s`-`uname -m`"
+XPLAT_DCOMPOSE="https://github.com/docker/compose/releases/download/1.3.1/docker-compose-`uname -s`-`uname -m`"
 
 command_exists () {
     type "$1" &> /dev/null ;
@@ -71,6 +77,8 @@ linuxDeps(){
 installDockerBinLinux(){
     # Uncomment for latest stable.then Else then latest test will be installed
     # $SUDO wget --no-check-certificate -qO- https://get.docker.com/ | sh
+    # Uncomment for experimental
+    # $SUDO wget -qO- https://experimental.docker.com/ | sh
     # Install then latest test Docker binary
     $SUDO wget --no-check-certificate -qO- https://get.docker.com/ | sh
     $SUDO usermod -aG docker `whoami`
@@ -97,11 +105,11 @@ if [ "$UNAME" = "Darwin" ]; then
     fi
     # If 'upgrade' was passed as a parameter it will refresh everything.
     # Existing binaries will be deleted and replaced.
-    if [ $1 == 'upgrade' ]; then
+    if [ "$1" = "upgrade" ]; then
         echo -e "${WARN} Checking for boot2docker upgrades and refreshing all docker binaries."
         echo -e "${WARN} You have 10 seconds to hit ctrl ^c to exit before existing binaries are removed"
         sleep 10
-        $SUDO boot2docker upgrade
+        $SUDO boot2docker upgrade --iso-url=${BOOT2DOCKER_RC}
         $SUDO rm -f /usr/local/bin/docker 2> /dev/null
         $SUDO rm -f /usr/local/bin/docker-compose 2> /dev/null
         $SUDO rm -f /usr/local/bin/docker-machine 2> /dev/null
@@ -124,7 +132,7 @@ if [ "$UNAME" = "Darwin" ]; then
         installCompose
     fi
 elif [ "$UNAME" = "Linux" ]; then
-    if [ $1 == 'upgrade' ]; then
+    if [ "$1" = "upgrade" ]; then
         echo -e "${WARN} Refreshing all docker binaries with the following versions:"
         echo -e "${INFO}"${XPLAT_DCOMPOSE}
         echo -e "${INFO}"${LINUX_DMACHINE}
@@ -155,8 +163,8 @@ elif [ "$UNAME" = "Linux" ]; then
         installCompose
     fi
 else
-  echo -e "$ERROR-----> Unsupported OS:[ $UNAME ] this script only supports ubuntu, debian or OS X"
-  exit 1
+    echo -e "$ERROR-----> Unsupported OS:[ $UNAME ] this script only supports ubuntu, debian or OS X"
+    exit 1
 fi
 
 echo -e "Verify you see a version for each binary below (docker, machine, compose)"
