@@ -35,7 +35,7 @@ LINUX_DMACHINE="https://github.com/docker/machine/releases/download/v0.3.0/docke
 # DARWIN_DOCKER="https://test.docker.com/builds/Darwin/x86_64/docker-1.7.0-rc1"
 
 # Docker Compose RC for both OS X and Linux
-XPLAT_DCOMPOSE="https://github.com/docker/compose/releases/download/1.3.1/docker-compose-`uname -s`-`uname -m`"
+XPLAT_DCOMPOSE="https://github.com/docker/compose/releases/download/1.5.0rc2/docker-compose-`uname -s`-`uname -m`"
 
 command_exists () {
     type "$1" &> /dev/null ;
@@ -54,8 +54,10 @@ checkPermissions() {
 
 # Must have boot2docker installed if using Mac OS X
 installMachineMac() {
-    $SUDO wget --no-check-certificate -O /usr/local/bin/docker-machine ${DARWIN_DMACHINE}
-    $SUDO chmod +x /usr/local/bin/docker-machine
+  $SUDO  curl -L https://github.com/docker/machine/releases/download/v0.5.0-rc4/docker-machine_darwin-amd64.zip >machine.zip && \
+  unzip machine.zip && \
+  rm machine.zip && \
+  mv docker-machine* /usr/local/bin
 }
 
 installDockerBinMac(){
@@ -65,7 +67,7 @@ installDockerBinMac(){
 
 installCompose(){
     # Ran into weird permissions on OS X so downloading to CWD then moving, hackariffic
-    $SUDO wget --no-check-certificate -O ./docker-compose ${XPLAT_DCOMPOSE}
+    curl -L ${XPLAT_DCOMPOSE} > ./docker-compose
     $SUDO mv docker-compose /usr/local/bin/docker-compose
     $SUDO chmod +x /usr/local/bin/docker-compose
 }
