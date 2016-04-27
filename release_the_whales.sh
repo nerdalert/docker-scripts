@@ -7,7 +7,7 @@
 # 1) Launch a specified number of containers by running: --> ./release-the-whales.sh 25
 # 2) Delete all containers by running:--> ./release-the-whales.sh clean
 #################################################################################
-image_name="busybox"
+image_name="alpine"
 
 delcon() {
 # if no containers matching $image_name exist you will get an error of:
@@ -21,7 +21,7 @@ if [ "$1" -eq "$1" ] 2>/dev/null; then
     for i in `seq 1 $1`;
 do
     echo "Launching container #$i"
-    docker run -itd --name=container-${i} busybox
+    docker run -itd --name=container-${i} ${image_name} /bin/sh
 done
 fi
 
