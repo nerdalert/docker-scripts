@@ -52,10 +52,4 @@ docker run --net=mcv0 -itd alpine /bin/sh
 docker rm -f `docker ps -ql`
 docker -H tcp://${SW_HOST}:2376 network rm mcv0
 ##########################################################
-### --internal option
-docker -H tcp://${SW_HOST}:2376 network create -d macvlan --internal mcv0
-sleep 1
-docker run --net=mcv0 -itd alpine /bin/sh
 
-docker rm -f `docker ps -ql`
-docker -H tcp://${SW_HOST}:2376 network rm mcv0
